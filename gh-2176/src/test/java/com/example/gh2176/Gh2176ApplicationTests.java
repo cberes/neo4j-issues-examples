@@ -2,7 +2,6 @@ package com.example.gh2176;
 
 import org.junit.jupiter.api.Test;
 import org.neo4j.driver.Driver;
-import org.neo4j.driver.Session;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -14,29 +13,48 @@ import static org.assertj.core.api.Assertions.assertThat;
 class Gh2176ApplicationTests {
 
     private final Driver driver;
-    private final OuterDomainRepository repository;
+    private final AbstractSuperClassRepository absRepository;
+    private final ConcreteSuperClassRepository conRepository;
 
     @Autowired
-    Gh2176ApplicationTests(Driver driver, OuterDomainRepository repository) {
+    Gh2176ApplicationTests(Driver driver,
+                           AbstractSuperClassRepository absRepository,
+                           ConcreteSuperClassRepository conRepository) {
         this.driver = driver;
-        this.repository = repository;
+        this.absRepository = absRepository;
+        this.conRepository = conRepository;
+    }
+
+//    @BeforeEach
+//    void setup() {
+//        try (Session session = driver.session()) {
+//            session.run("MATCH (n) detach delete n").consume();
+//        }
+//    }
+
+    @Test
+    void abstractSuperClass() {
+        absRepository.save(new AbstractSuperClass.ExtendsAbstractClassNested());
+        absRepository.save(new ExtendsAbstractClassTopLevel());
+
+        List<AbstractSuperClass> domains = absRepository.findAll();
+        assertThat(domains).hasSize(2);
+        assertThat(domains).allSatisfy(it -> {
+            assertThat(it).isOfAnyClassIn(
+                    AbstractSuperClass.ExtendsAbstractClassNested.class, ExtendsAbstractClassTopLevel.class);
+        });
     }
 
     @Test
-    void innerDomainLoading() {
+    void concreteSuperClass() {
+        conRepository.save(new ConcreteSuperClass.ExtendsConcreteClassNested());
+        conRepository.save(new ExtendsConcreteClassTopLevel());
 
-        // create one node with the driver
-        try (Session session = driver.session()) {
-            session.run("MATCH (n) detach delete n").consume();
-            session.run("CREATE (:InnerDomain:OuterDomain)").consume();
-        }
-
-        // create another one with the repository
-        repository.save(new OuterDomain.InnerDomain());
-
-        List<OuterDomain> domains = repository.findAll();
+        List<ConcreteSuperClass> domains = conRepository.findAll();
         assertThat(domains).hasSize(2);
-        assertThat(domains.get(0)).isOfAnyClassIn(OuterDomain.InnerDomain.class);
+        assertThat(domains).allSatisfy(it -> {
+            assertThat(it).isOfAnyClassIn(
+                    ConcreteSuperClass.ExtendsConcreteClassNested.class, ExtendsConcreteClassTopLevel.class);
+        });
     }
-
 }

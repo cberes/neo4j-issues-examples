@@ -7,12 +7,11 @@ import org.springframework.data.neo4j.core.schema.Node;
 @Getter
 @Setter
 @Node
-public abstract class OuterDomain extends BaseEntity<OuterDomain> {
+public class ConcreteSuperClass extends BaseEntity<ConcreteSuperClass> {
 
     @Getter
     @Setter
     @Node
-    public static class InnerDomain extends OuterDomain {
-        // constructors
+    public static class ExtendsConcreteClassNested extends ConcreteSuperClass {
     }
 }
